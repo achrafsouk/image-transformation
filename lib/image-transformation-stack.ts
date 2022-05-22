@@ -104,9 +104,13 @@ export class ImageTransformationStack extends Stack {
         },
       },
     });
-    // Test url
-    new CfnOutput(this, 'URL', {
-      description: 'You can use this url to test image resizing',
+    // Test urls
+    new CfnOutput(this, 'TransformedImageUrl', {
+      description: 'Exmaple of transformed image url',
+      value: 'https://'+imageDelivery.distributionDomainName+'/format=auto,width=300/'+S3_DESTINATION_PREFIX+'1.jpeg'
+    });
+    new CfnOutput(this, 'OriginalImageURL', {
+      description: 'URL of an original image',
       value: 'https://'+imageDelivery.distributionDomainName+'/'+S3_DESTINATION_PREFIX+'1.jpeg'
     });
     // S3 bucket name
