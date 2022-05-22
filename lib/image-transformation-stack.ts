@@ -5,8 +5,6 @@ import { MyCustomResource } from './my-custom-resource';
 // The number of days we want to keep transformed images on S3 useing lifecycle policies
 const S3_OBJECT_LIFECYCLE_DURATION = 1; 
 const TRANSFORMED_IMAGE_PREFIX = 'transformed'
-// secret key between CloudFront and Lambda URL for access control
-const SECRET_KEY = this.node.addr;
 // optional prefix in destination S3 bucket
 const S3_DESTINATION_PREFIX = 'images/rio/';
 // cache TTL of transformed images
@@ -17,6 +15,8 @@ export class ImageTransformationStack extends Stack {
   constructor(scope: Construct, id: string, props?: StackProps) {
     super(scope, id, props);
     
+    // secret key between CloudFront and Lambda URL for access control
+    const SECRET_KEY = this.node.addr;
     // Create the image S3 bucket
     const imageBucket = new s3.Bucket(this, 's3-image-storage', {
       lifecycleRules: [
@@ -25,7 +25,7 @@ export class ImageTransformationStack extends Stack {
             expiration: Duration.days(S3_OBJECT_LIFECYCLE_DURATION),
           },
         ],
-  });
+    });
     // Add a sample image
     new s3deploy.BucketDeployment(this, 'DeployWebsite', {
       sources: [s3deploy.Source.asset('./image-sample')],
