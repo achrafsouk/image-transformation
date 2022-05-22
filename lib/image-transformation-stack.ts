@@ -6,7 +6,7 @@ import { MyCustomResource } from './my-custom-resource';
 const S3_OBJECT_LIFECYCLE_DURATION = 1; 
 const TRANSFORMED_IMAGE_PREFIX = 'transformed'
 // secret key between CloudFront and Lambda URL for access control
-const SECRET_KEY = 'MJRoIrmZmiCgT9M';
+const SECRET_KEY = this.node.addr;
 // optional prefix in destination S3 bucket
 const S3_DESTINATION_PREFIX = 'images/rio/';
 // cache TTL of transformed images
