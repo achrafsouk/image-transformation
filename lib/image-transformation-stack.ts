@@ -72,7 +72,7 @@ export class ImageTransformationStack extends Stack {
     // Create a CloudFront Function for url rewrites
     const urlRewriteFunction = new cloudfront.Function(this, 'urlRewrite', {
       code: cloudfront.FunctionCode.fromFile({filePath: 'functions/url-rewrite/index.js',}),
-      // functionName: "urlRewriteCFFunction",
+      functionName: "urlRewriteCFFunction",
     });
     // CReate a CloudFront cache behaviour dedicated for image optimization
     // Create a CloudFront distribution with default behaviour pointing to the S3 bucket
