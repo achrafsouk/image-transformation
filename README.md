@@ -1,11 +1,4 @@
 
-An Image optimization solution can be architected in different ways, according to the tradeoffs (cost, flexibility, performance & complexity) that best meet your business. When architecting an Image optimization solution, you need to make the following technical decisions:
-
-* What image transformations are needed? formatting, resizing, cropping, etc..
-* How do we decide which transformation to be applied for a specific image request? On the Front-end (static, responsive design, etc..), on the Edge side (based on request content such as device) or combination of both?
-* Where do we execute the transformation? In a central location or in a distributed way?
-* When do we execute the transformation? Every time or do we store transformed images for a short duration? Synchronously or Asynchronously?
-
 The proposed architecture is suitable for most common use cases. Images transformation are executed centrally in an AWS region, only when the image hasn’t been already transformed and stored. The available transformations include resizing and formatting, but can be extended to more operations if needed. Both transformations can be requested by the Front-end, with the possibility of automatic format selection done on edge side. The architecture is based on S3 for storage, CloudFront for content delivery, and Lambda for image processing. The request flow:
 
 1. The user sends a HTTP request for an image specific transformations, such as encoding and size. The transformations are encoded in the URL, more precisely as comma-separated list of directives as a prefix to the original path.  An example URL would look like this: https://exmaples.com/format=webp,width=200/images/cats/mycat.jpg. 
