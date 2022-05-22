@@ -5,7 +5,7 @@ import { ImageTransformationStack } from '../lib/image-transformation-stack';
 
 
 const app = new cdk.App();
-new ImageTransformationStack(app, 'myImageTransformationStack', {
+new ImageTransformationStack(app, 'imageTransformationStack', {
 
 });
 
