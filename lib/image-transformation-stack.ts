@@ -107,7 +107,7 @@ export class ImageTransformationStack extends Stack {
     // Test url
     new CfnOutput(this, 'URL', {
       description: 'You can use this url to test image resizing',
-      value: 'https://'+imageDelivery.distributionDomainName+'/'+S3_DESTINATION_PREFIX+'1.jpg'
+      value: 'https://'+imageDelivery.distributionDomainName+'/'+S3_DESTINATION_PREFIX+'1.jpeg'
     });
     // S3 bucket name
     new CfnOutput(this, 'Bucket', {
