@@ -5,6 +5,7 @@
     "image-transformation": "bin/image-transformation.js"
   },
   "scripts": {
+    "prebuild": "npm install sharp --prefix functions/image-processing/ -g",
     "build": "tsc",
     "watch": "tsc -w",
     "test": "jest",
