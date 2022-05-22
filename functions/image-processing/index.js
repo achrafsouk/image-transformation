@@ -1,6 +1,6 @@
 const AWS = require('aws-sdk');
 const https = require('https');
-const Sharp = require('sharp');
+const Sharp = require('./lib/node_modules/sharp');
 
 const keepAliveAgent = new https.Agent({keepAlive: true});
 const S3 = new AWS.S3({signatureVersion: 'v4',httpOptions: {agent: keepAliveAgent}}); //TODO, is it still needed?
