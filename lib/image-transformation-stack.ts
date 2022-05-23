@@ -38,7 +38,7 @@ export class ImageTransformationStack extends Stack {
       runtime: lambda.Runtime.NODEJS_16_X,
       handler: 'index.handler',
       code: lambda.Code.fromAsset('functions/image-processing'),
-      timeout: Duration.seconds(5),
+      timeout: Duration.seconds(60),
       memorySize: 1500,
       environment: {
         bucketName: imageBucket.bucketName,
