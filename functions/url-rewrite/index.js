@@ -35,7 +35,7 @@ function handler(event) {
         case 'width':
             if (operationKV[1]) {
                 var width = parseInt(operationKV[1]);
-                if (width < 0) width = width * -1;
+                if (width < 0) return sendClientError();
                 if (width > 4000) width = 4000;
                 normalizedOperations['width'] = width.toString();
             }
@@ -43,9 +43,17 @@ function handler(event) {
         case 'height':
             if (operationKV[1]) {
                 var height = parseInt(operationKV[1]);
-                if (height < 0) height = height * -1;
+                if (height < 0) return sendClientError();
                 if (height > 4000) height = 4000;
                 normalizedOperations['height'] = height.toString();
+            }
+            break;
+        case 'quality':
+            if (operationKV[1]) {
+                var quality = parseInt(operationKV[1]);
+                if (quality <= 0) return sendClientError();
+                if (quality > 100) quality = 100;
+                normalizedOperations['quality'] = quality.toString();
             }
             break;
         default: break;
@@ -56,6 +64,7 @@ function handler(event) {
         // put them in order
         var normalizedOperationsArray = [];
         if (normalizedOperations.format) normalizedOperationsArray.push('format='+normalizedOperations.format);
+        if (normalizedOperations.quality) normalizedOperationsArray.push('quality='+normalizedOperations.quality);
         if (normalizedOperations.width) normalizedOperationsArray.push('width='+normalizedOperations.width);
         if (normalizedOperations.height) normalizedOperationsArray.push('height='+normalizedOperations.height);
         request.uri =  '/' + normalizedOperationsArray.join(',') + '/' + originalImagePath;
@@ -67,5 +76,11 @@ function handler(event) {
         headers: { "location": { "value": "https://"+request.headers['host'].value+'/'+originalImagePath } } 
     }
     
+}
 
+function sendClientError() {
+    return { 
+        statusCode: 400, 
+        statusDescription: 'Bad Request', 
+    }
 }
