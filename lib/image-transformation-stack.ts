@@ -1,113 +1,136 @@
-const AWS = require('aws-sdk');
-const https = require('https');
-const Sharp = require('sharp');
+import { Stack, StackProps, aws_s3 as s3, aws_s3_deployment as s3deploy, aws_cloudfront as cloudfront, aws_cloudfront_origins as origins, aws_lambda as lambda, aws_iam as iam, Duration, CfnOutput, aws_logs as logs} from 'aws-cdk-lib';
+import { Construct } from 'constructs';
+import { MyCustomResource } from './my-custom-resource';
+import { createHash } from 'crypto';
 
-const keepAliveAgent = new https.Agent({keepAlive: true});
-const S3 = new AWS.S3({signatureVersion: 'v4',httpOptions: {agent: keepAliveAgent}}); //TODO, is it still needed?
-const S3_BUCKET = process.env.bucketName; 
-const TRANSFORMED_IMAGE_PREFIX = process.env.transformedImagePrefix;
-const SECRET_KEY = process.env.secretKey;
-const TRANSFORMED_IMAGE_TTL = process.env.transformedImageTTL;
+// The number of days we want to keep transformed images on S3 useing lifecycle policies
+const S3_OBJECT_LIFECYCLE_DURATION = 1; 
+const TRANSFORMED_IMAGE_PREFIX = 'transformed'
+// optional prefix in destination S3 bucket
+const S3_DESTINATION_PREFIX = 'images/rio/';
+// cache TTL of transformed images
+const TRANSFORMED_IMAGE_TTL = '31622400';
+// region to Origin Shield mapping
+const ORIGIN_SHIELD_MAPPING = new Map([['af-south-1', 'eu-west-2'], [ 'ap-east-1' ,'ap-northeast-2'], [ 'ap-northeast-1', 'ap-northeast-1'], [
+  'ap-northeast-2', 'ap-northeast-2'], [ 'ap-northeast-3', 'ap-northeast-1'], [ 'ap-south-1', 'ap-south-1'], [ 'ap-southeast-1','ap-southeast-1'], [ 
+  'ap-southeast-2', 'ap-southeast-2'], [ 'ca-central-1', 'us-east-1'], [ 'eu-central-1', 'eu-central-1'], [ 'eu-north-1','eu-central-1'], [
+  'eu-south-1','eu-central-1'], [ 'eu-west-1', 'eu-west-1'], [ 'eu-west-2', 'eu-west-2'], [ 'eu-west-3', 'eu-west-2'], [ 'me-south-1', 'ap-south-1'], [
+  'sa-east-1', 'sa-east-1'], [ 'us-east-1', 'us-east-1'], [ 'us-east-2','us-east-2'], [ 'us-west-1', 'us-west-1'], [ 'us-west-2', 'us-west-2']] );
 
-exports.handler = async (event) => {
-    // First validate if the request is coming from CloudFront
-    if (!event.headers["x-origin-secret-header"] || !(event.headers["x-origin-secret-header"] === SECRET_KEY)) return sendError(403, 'Request unathorized', event);
-    // Validate if this is a GET request
-    if (!event.requestContext || !event.requestContext.http || !(event.requestContext.http.method === 'GET')) return sendError(400, 'Only GET method is supported', event);
 
-    // The request triggering this function used the */images/* cache behavio.
-    // An example of expected path is /format=auto,width=100/images/cats/cat1.jpg
-    var imagePathArray= event.requestContext.http.path.split("/");
-    imagePathArray.shift(); // Get rid of first slash
-    // get the prefix which corresponds to requested image operatioons
-    var operationsPrefix = imagePathArray.shift(); 
-    console.log('operationsPrefix', operationsPrefix);
-    // with the prefix removed, we get the original image path on the S3 bucket
-    var originalImagePath = imagePathArray.join('/');
-    // Downloading original image
-    let originalImage;
-    let contentType;
-    try {
-        originalImage = await S3.getObject({ Bucket: S3_BUCKET, Key: originalImagePath }).promise();
-        contentType = originalImage.ContentType;
-    } catch (error) {
-        console.log(error);
-        return sendError(500, 'error downloading original image', event);
-    }
-    let sharpObject = Sharp(originalImage.Body);
-    let transformedImage;
-    //  execute the requested oprations 
-    var operationsJSON = {};
-    var operationsArray = operationsPrefix.split(',');
-    operationsArray.forEach(operation => {
-        var operationKV = operation.split("=");
-        operationsJSON[operationKV[0]] = operationKV[1];
+export class ImageTransformationStack extends Stack {
+  constructor(scope: Construct, id: string, props?: StackProps) {
+    super(scope, id, props);
+    
+    // secret key between CloudFront and Lambda URL for access control
+    const SECRET_KEY = createHash('md5').update(this.node.addr).digest('hex') ;
+    // Create the image S3 bucket
+    const imageBucket = new s3.Bucket(this, 's3-image-storage', {
+      lifecycleRules: [
+          {
+            prefix: TRANSFORMED_IMAGE_PREFIX+'/',
+            expiration: Duration.days(S3_OBJECT_LIFECYCLE_DURATION),
+          },
+        ],
+    });
+    // Add a sample image
+    new s3deploy.BucketDeployment(this, 'DeployWebsite', {
+      sources: [s3deploy.Source.asset('./image-sample')],
+      destinationBucket: imageBucket,
+      destinationKeyPrefix: S3_DESTINATION_PREFIX, // optional prefix in destination bucket
     });
 
-    try {
-        // check if resizing is requested
-        var resizingOptions = {};
-        if (operationsJSON['width']) resizingOptions.width = parseInt(operationsJSON['width']);
-        if (operationsJSON['height']) resizingOptions.height = parseInt(operationsJSON['height']);
-        if (resizingOptions) transformedImage = await sharpObject.resize(resizingOptions);
-        if (operationsJSON['format']) {
-            var isLossy = false;
-            switch (operationsJSON['format'])
-            {
-               case 'jpeg': contentType = 'image/jpeg'; isLossy = true; break;
-               case 'svg': contentType = 'image/svg+xml'; break;
-               case 'gif': contentType = 'image/gif'; break;
-               case 'webp': contentType = 'image/webp'; isLossy = true; break;
-               case 'png': contentType = 'image/png'; break;
-               case 'avif': contentType = 'image/avif'; isLossy = true; break;
-               default : contentType = 'image/jpeg'; isLossy = true;
-            }
-            if (operationsJSON['quality'] && isLossy) {
-                transformedImage = await transformedImage.toFormat(operationsJSON['format'], {
-                    quality: parseInt(operationsJSON['quality']),
-                });
-            } else transformedImage = await transformedImage.toFormat(operationsJSON['format']);
-        }
-        transformedImage = await transformedImage.toBuffer();
-    } catch (error) {
-        console.log(error);
-        return sendError(500, 'error transforming image', event);
-    }
+    // Creating Lambda URL for image processing using Sharp library
+    const imageProcessing = new lambda.Function(this, 'image-transformation', {
+      runtime: lambda.Runtime.NODEJS_16_X,
+      handler: 'index.handler',
+      code: lambda.Code.fromAsset('functions/image-processing'),
+      timeout: Duration.seconds(60),
+      memorySize: 1500,
+      //architecture: lambda.Architecture.ARM_64,
+      environment: {
+        bucketName: imageBucket.bucketName,
+        transformedImagePrefix: TRANSFORMED_IMAGE_PREFIX,
+        transformedImageTTL: TRANSFORMED_IMAGE_TTL,
+        secretKey: SECRET_KEY,
+      },
+      logRetention: logs.RetentionDays.ONE_DAY,
+    });
 
-    // upload transformed image back to S3
-    try { 
-        await S3.putObject({
-            Body: transformedImage, 
-            Bucket: S3_BUCKET, 
-            Key:  TRANSFORMED_IMAGE_PREFIX + event.requestContext.http.path, 
-            StorageClass: "ONEZONE_IA",
-            ContentType: contentType,
-            
-            Metadata: {
-                'cache-control': 'max-age='+TRANSFORMED_IMAGE_TTL,
-            },
-        }, function(err, data) {});
-    } catch (error) {
-        console.log('APPLICATION ERROR', 'Could not upload transformated image to S3');
-        console.log(JSON.stringify(event));
-    }
+    const imageProcessingURL = imageProcessing.addFunctionUrl({
+      authType: lambda.FunctionUrlAuthType.NONE,
+    });
 
-    return {
-        statusCode: 200,
-        body: transformedImage.toString('base64'),
-        isBase64Encoded: true,
-        headers: {
-            'Content-Type': contentType, 
-            'Cache-Control': 'max-age='+TRANSFORMED_IMAGE_TTL 
-        }
-    };
-};
+    // Add IAM permissions to the Lambda function to be able to access the image bucket
+    const s3BucketReadWritePolicy = new iam.PolicyStatement({
+      actions: ['s3:*Object'],
+      resources: ['arn:aws:s3:::'+imageBucket.bucketName+'/*'],
+    });
+    imageProcessing.role?.attachInlinePolicy(
+      new iam.Policy(this, 'read-write-bucket-policy', {
+        statements: [s3BucketReadWritePolicy],
+      }),
+    );
+    
+    // Leverage a custom resource to get the hostname of the LambdaURL
+    const imageProcessingHelper = new MyCustomResource(this, 'DemoResource', {
+      Url: imageProcessingURL.url,
+    });
 
-function sendError(code, message, event){
-    console.log('APPLICATION ERROR', message);
-    console.log(JSON.stringify(event));
-    return {
-        statusCode: code,
-        body: message,
-    };
+    // Create a CloudFront Function for url rewrites
+    const urlRewriteFunction = new cloudfront.Function(this, 'urlRewrite', {
+      code: cloudfront.FunctionCode.fromFile({filePath: 'functions/url-rewrite/index.js',}),
+      functionName: `urlRewriteFunction${this.node.addr}`, 
+    });
+    // CReate a CloudFront cache behaviour dedicated for image optimization
+    // Create a CloudFront distribution with default behaviour pointing to the S3 bucket
+    const originShieldRegion = ORIGIN_SHIELD_MAPPING.get(Stack.of(this).region);
+    const imageDelivery = new cloudfront.Distribution(this, 'imageDelivery', {
+      comment: 'image optimization',
+      defaultBehavior: {
+        origin: new origins.S3Origin(imageBucket)
+      },
+      additionalBehaviors: {
+        '*/images/*': {
+          origin: new origins.OriginGroup ({
+            primaryOrigin: new origins.S3Origin(imageBucket, {
+              originShieldRegion: originShieldRegion,
+              originPath: '/' + TRANSFORMED_IMAGE_PREFIX,
+            }),
+            fallbackOrigin: new origins.HttpOrigin(imageProcessingHelper.hostname, {
+              originShieldRegion: originShieldRegion,
+              customHeaders: {
+                'x-origin-secret-header': SECRET_KEY,
+              },
+            }), 
+            fallbackStatusCodes: [403],
+          }),
+          functionAssociations: [{
+            eventType: cloudfront.FunctionEventType.VIEWER_REQUEST,
+            function: urlRewriteFunction,
+          }]
+        },
+      },
+    });
+    // Test urls
+    new CfnOutput(this, 'TransformedImageUrl1', {
+      description: 'Exmaple of transformed image url',
+      value: 'https://'+imageDelivery.distributionDomainName+'/format=avif,quality=40/'+S3_DESTINATION_PREFIX+'2.jpeg'
+    });
+    new CfnOutput(this, 'TransformedImageUrl2', {
+      description: 'Exmaple of transformed image url',
+      value: 'https://'+imageDelivery.distributionDomainName+'/format=auto,width=300/'+S3_DESTINATION_PREFIX+'1.jpeg'
+    });
+    new CfnOutput(this, 'OriginalImageURL', {
+      description: 'URL of an original image',
+      value: 'https://'+imageDelivery.distributionDomainName+'/'+S3_DESTINATION_PREFIX+'1.jpeg'
+    });
+    // S3 bucket name
+    new CfnOutput(this, 'Bucket', {
+      description: 'You can drop additional files, images to this bucket',
+      value: imageBucket.bucketName
+    });
+
+  }
 }
+
