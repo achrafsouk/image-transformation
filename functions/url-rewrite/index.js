@@ -15,49 +15,54 @@ function handler(event) {
     var normalizedOperations = {};
     operationsArray.forEach(operation => {
         var operationKV = operation.split("=");
-        switch (operationKV[0]) {
-            case 'format': 
-                var SUPPORTED_FORMATS = ['auto', 'jpeg', 'webp', 'avif', 'png', 'svg', 'gif'];
-                if (operationKV[1] && SUPPORTED_FORMATS.includes(operationKV[1])) {
-                    if (operationKV[1] === 'auto') {
-                        operationKV[1] = 'jpeg';
-                        if (request.headers['accept']) {
-                            if (request.headers['accept'].value.includes("avif")) {
-                                operationKV[1] = 'avif';
-                            } else if (request.headers['accept'].value.includes("webp")) {
-                                operationKV[1] = 'webp';
-                            } 
+        if (operationKV[0]) {
+            switch (operationKV[0]) {
+                case 'format': 
+                    var SUPPORTED_FORMATS = ['auto', 'jpeg', 'webp', 'avif', 'png', 'svg', 'gif'];
+                    if (operationKV[1] && SUPPORTED_FORMATS.includes(operationKV[1])) {
+                        if (operationKV[1] === 'auto') {
+                            operationKV[1] = 'jpeg';
+                            if (request.headers['accept']) {
+                                if (request.headers['accept'].value.includes("avif")) {
+                                    operationKV[1] = 'avif';
+                                } else if (request.headers['accept'].value.includes("webp")) {
+                                    operationKV[1] = 'webp';
+                                } 
+                            }
+                        }
+                        normalizedOperations['format'] = operationKV[1];
+                    }
+                    break;
+                case 'width':
+                    if (operationKV[1]) {
+                        var width = parseInt(operationKV[1]);
+                        if (!isNaN(width) && (width > 0)) {
+                            if (width > 4000) width = 4000;
+                            normalizedOperations['width'] = width.toString();
                         }
                     }
-                    normalizedOperations['format'] = operationKV[1];
-                }
-                break;
-        case 'width':
-            if (operationKV[1]) {
-                var width = parseInt(operationKV[1]);
-                if (width < 0) return sendClientError();
-                if (width > 4000) width = 4000;
-                normalizedOperations['width'] = width.toString();
+                    break;
+                case 'height':
+                    if (operationKV[1]) {
+                        var height = parseInt(operationKV[1]);
+                        if (!isNaN(height) && (height > 0)) {
+                            if (width > 4000) width = 4000;
+                            normalizedOperations['height'] = height.toString();
+                        }
+                    }
+                    break;
+                case 'quality':
+                    if (operationKV[1]) {
+                        var quality = parseInt(operationKV[1]);
+                        if (!isNaN(quality) && (quality > 0)) {
+                            if (width > 100) width = 100;
+                            normalizedOperations['quality'] = quality.toString();
+                        }
+                    }
+                    break;
+                default: break;
             }
-            break;
-        case 'height':
-            if (operationKV[1]) {
-                var height = parseInt(operationKV[1]);
-                if (height < 0) return sendClientError();
-                if (height > 4000) height = 4000;
-                normalizedOperations['height'] = height.toString();
-            }
-            break;
-        case 'quality':
-            if (operationKV[1]) {
-                var quality = parseInt(operationKV[1]);
-                if (quality <= 0) return sendClientError();
-                if (quality > 100) quality = 100;
-                normalizedOperations['quality'] = quality.toString();
-            }
-            break;
-        default: break;
-      }
+        }
     });
     //if no valid operations found, redirect to original image on S3, otherwise rewrite the path to normalized version
     if (Object.keys(normalizedOperations).length > 0) {
@@ -78,9 +83,3 @@ function handler(event) {
     
 }
 
-function sendClientError() {
-    return { 
-        statusCode: 400, 
-        statusDescription: 'Bad Request', 
-    }
-}
