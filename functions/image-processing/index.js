@@ -9,7 +9,6 @@ const TRANSFORMED_IMAGE_PREFIX = process.env.transformedImagePrefix;
 const SECRET_KEY = process.env.secretKey;
 const TRANSFORMED_IMAGE_TTL = process.env.transformedImageTTL;
 
-
 exports.handler = async (event) => {
     // First validate if the request is coming from CloudFront
     if (!event.headers["x-origin-secret-header"] || !(event.headers["x-origin-secret-header"] === SECRET_KEY)) return sendError(403, 'Request unathorized', event);
@@ -52,18 +51,23 @@ exports.handler = async (event) => {
         if (operationsJSON['height']) resizingOptions.height = parseInt(operationsJSON['height']);
         if (resizingOptions) transformedImage = await sharpObject.resize(resizingOptions);
         if (operationsJSON['format']) {
-            transformedImage = await transformedImage.toFormat(operationsJSON['format']);
+            var isLossy = false;
             switch (operationsJSON['format'])
             {
-               case 'jpeg': contentType = 'image/jpeg'; break;
+               case 'jpeg': contentType = 'image/jpeg'; isLossy = true; break;
                case 'svg': contentType = 'image/svg+xml'; break;
                case 'gif': contentType = 'image/gif'; break;
-               case 'webp': contentType = 'image/webp'; break;
+               case 'webp': contentType = 'image/webp'; isLossy = true; break;
                case 'png': contentType = 'image/png'; break;
-               case 'avif': contentType = 'image/avif'; break;
-               default : contentType = 'image/jpeg';
+               case 'avif': contentType = 'image/avif'; isLossy = true; break;
+               default : contentType = 'image/jpeg'; isLossy = true;
             }
-          }
+            if (operationsJSON['quality'] && isLossy) {
+                transformedImage = await transformedImage.toFormat(operationsJSON['format'], {
+                    quality: parseInt(operationsJSON['quality']),
+                });
+            } else transformedImage = await transformedImage.toFormat(operationsJSON['format']);
+        }
         transformedImage = await transformedImage.toBuffer();
     } catch (error) {
         console.log(error);
