@@ -1,7 +1,7 @@
+var crypto = require('crypto');
+
 function handler(event) {
     var request = event.request;
-    var headers = request.headers;
-    
     // The request triggering this function used the */images/* cache behavio.
     // An example of expected path is /format=auto,width=100/images/cats/cat1.jpg
     var imagePathArray= request.uri.toLowerCase().split("/");
@@ -72,7 +72,9 @@ function handler(event) {
         if (normalizedOperations.quality) normalizedOperationsArray.push('quality='+normalizedOperations.quality);
         if (normalizedOperations.width) normalizedOperationsArray.push('width='+normalizedOperations.width);
         if (normalizedOperations.height) normalizedOperationsArray.push('height='+normalizedOperations.height);
-        request.uri =  '/' + normalizedOperationsArray.join(',') + '/' + originalImagePath;
+        var preHashPath = '/' + normalizedOperationsArray.join(',') + '/' + originalImagePath;
+
+        request.uri = '/' + hashString(preHashPath) + preHashPath;
         
         return request;
     } else return { 
@@ -83,3 +85,8 @@ function handler(event) {
     
 }
 
+function hashString(input) {
+    var md5 = crypto.createHash("md5");
+    md5.update(input);
+    return md5.digest("base64url").substring(0, 9)
+}
