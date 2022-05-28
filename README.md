@@ -137,7 +137,8 @@ aws s3 cp out s3://YOUR_BUCKET_NAME/ --recursive
 ```
 
 Navigate to the deployed web page (`/index.html`) in a Chrome browser using the previously generated CloudFront domain name. Using developer tools, check the requested images size based on the viewport. For example, you can verify responsiveness by emulate a mobile device rendering in Chrome. Finally, if you are using a recent Chrome browser, you can see that images are returned in the modern AVIF format since they were requested with the `format=auto` directive.
-[Image: screenshot.png]
+
+<img src="screenshot.png" width="900">
 
 ## Cost considerations
 
