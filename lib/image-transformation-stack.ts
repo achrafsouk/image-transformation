@@ -116,7 +116,7 @@ export class ImageTransformationStack extends Stack {
     });
 
     // Creating a custom response headers policy. CORS allowed for all origins.
-    const myResponseHeadersPolicy = new cloudfront.ResponseHeadersPolicy(this, 'ResponseHeadersPolicy', {
+    const myResponseHeadersPolicy = new cloudfront.ResponseHeadersPolicy(this, `ResponseHeadersPolicy${this.node.addr}`, {
       responseHeadersPolicyName: 'ImageResponsePolicy',
       corsBehavior: {
         accessControlAllowCredentials: false,
