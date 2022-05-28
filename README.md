@@ -52,14 +52,13 @@ When the deployment is completed within minutes, the CDK output will include the
 In this section, we will create a simple web page using Next.js, and use the previously deployed Image solution to optimize the image. Start a [new Next.js project](https://nextjs.org/docs/api-reference/create-next-app) by typing the following in your command line:
 
 ```
-`npx create-next-app@latest
-`
+npx create-next-app@latest
 ```
 
 Navigate to your project folder. Modify the file `package.json` by changing the build script to allow exporting the build files to S3:
 
 ```
-`"build": "next build && next export",`
+"build": "next build && next export",
 ```
 
 In the `pages` directory, you can find the file `index.js` which contains the code of your web page. Then update the `index.js` to the following code:
