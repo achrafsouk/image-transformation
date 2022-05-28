@@ -16,7 +16,8 @@ An Image optimization solution can be architected in different ways, according t
 
 The proposed architecture is suitable for most common use cases. Images transformation are executed centrally in an AWS region, only when the image hasn’t been already transformed and stored. The available transformations include resizing and formatting, but can be extended to more operations if needed. Both transformations can be requested by the Front-end, with the possibility of automatic format selection done on edge side. The architecture is based on S3 for storage, CloudFront for content delivery, and Lambda for image processing. The request flow is explained in the next diagram:
 
-[Image: solution-architecture.png]
+<img src="solution-architecture.png" width="900">
+
 1. The user sends a HTTP request for an image specific transformations, such as encoding and size. The transformations are encoded in the URL, more precisely as comma-separated list of directives as a prefix to the original path.  An example URL would look like this: https://exmaples.com/format=webp,width=200/images/cats/mycat.jpg. 
 2. The request is processed by a nearby CloudFront Edge location providing the best performance. Before passing the request upstream, a CloudFront Function is executed on viewer request event to rewrite the request URL. CloudFront Functions is a feature of CloudFront that allows you to write lightweight functions in JavaScript for high-scale, latency-sensitive CDN customizations. In our architecture, we rewrite the URL to:
     1. Validate the requested transformations.
