@@ -167,18 +167,4 @@ cdk destroy
 ## Conclusion
 
 In this blog, you have have deployed a simple and performant image optimization solution, then you have used it in a sample web page based on the popular framework Node.js. From this starting point, you can customize further this solution for your business needs. For example, you can add new image transformations, normalize operations to a predefined set of possibilities, or implement a personalized image monitoring dashboard.
-* * *
-
-## Next steps:
-
-* Improvements:
-    * Simplify npm build/install
-    * Review which security headers to include
-    * Multiple deployments within an account lead to error (Response policies and CloudFront Functions-
-* Test the solution with a customer in production, and optimize performance
-    * Performance of S3 GET in Lambda (HTTP instead of HTTP? keep alive working? [multipart dowbload](https://github.com/awslabs/s3-managed-download-js)?)
-    * Can performance be improved with ARM based processor?
-* Transform Solution into a CDK construct
-* Try image streaming when available to optimize time to first byte
-* Consider influencing Serverless solution and Image handler solution
 
