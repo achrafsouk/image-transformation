@@ -1,4 +1,4 @@
-# Blog - Image Optimization using CloudFront 
+# Blog - Image Optimization using CloudFront and Lambda URL
 
 ## Introduction
 
@@ -89,7 +89,7 @@ export default function Home() {
             <div className={styles.grid}>
                 <div className={styles.card}>
                     <h2>The look</h2>
-                    <p>When Rio want to ask you for something</p><br/>
+                    <p>When Rio wants to ask you for something</p><br/>
                     <Image src="/images/rio/4.jpeg" loader={myLoader} layout="responsive" sizes="20vw" width={900} height={1200}/>
                 </div>
                 <div className={styles.card}>
@@ -99,12 +99,12 @@ export default function Home() {
                 </div>
                 <div className={styles.card}>
                     <h2>Happiness</h2>
-                    <p>When Rio go and play at the beach</p><br/>
+                    <p>When Rio goes to play at the beach</p><br/>
                     <Image src="/images/rio/1.jpeg" loader={myLoader} layout="responsive" sizes="20vw" width={900} height={1200}/>
                 </div>
                     <div className={styles.card}>
                     <h2>In love</h2>
-                    <p>When Rio fall in love.. with Flo the neighboor dog</p><br/>
+                    <p>When Rio falls in love.. with Flo the neighboor dog</p><br/>
                     <Image src="/images/rio/2.jpeg" loader={myLoader} layout="responsive" sizes="20vw" width={900} height={1200}/>
                 </div>
 
