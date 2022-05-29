@@ -36,8 +36,7 @@ exports.handler = async (event) => {
         originalImage = await S3.getObject({ Bucket: S3_BUCKET, Key: originalImagePath }).promise();
         contentType = originalImage.ContentType;
     } catch (error) {
-        console.log(error);
-        return sendError(500, 'error downloading original image', event);
+        return sendError(500, 'error downloading original image', error);
     }
     let sharpObject = Sharp(originalImage.Body);
     let transformedImage;
@@ -48,7 +47,7 @@ exports.handler = async (event) => {
         var operationKV = operation.split("=");
         operationsJSON[operationKV[0]] = operationKV[1];
     });
-    timingLog = timingLog + (performance.now()-startTime) + ' ';
+    timingLog = timingLog + parseInt(performance.now()-startTime) + ' ';
     startTime = performance.now();
     try {
         // check if resizing is requested
@@ -77,10 +76,9 @@ exports.handler = async (event) => {
         }
         transformedImage = await transformedImage.toBuffer();
     } catch (error) {
-        console.log(error);
-        return sendError(500, 'error transforming image', event);
+        return sendError(500, 'error transforming image', error);
     }
-    timingLog = timingLog + (performance.now()-startTime) + ' ';
+    timingLog = timingLog + parseInt(performance.now()-startTime) + ' ';
     startTime = performance.now();
     // upload transformed image back to S3 if required in the architecture
     if (STORE_TRANSFORMED_IMAGES === 'true') {
@@ -95,11 +93,10 @@ exports.handler = async (event) => {
                 },
             }, function(err, data) {});
         } catch (error) {
-            console.log('APPLICATION ERROR', 'Could not upload transformated image to S3');
-            console.log(error);
+            sendError('APPLICATION ERROR', 'Could not upload transformated image to S3', error);
         }
     }
-    timingLog = timingLog + (performance.now()-startTime) + ' ';
+    timingLog = timingLog + parseInt(performance.now()-startTime) + ' ';
     if (LOG_TIMING === 'true') console.log(timingLog);
     // return transformed image
     return {
@@ -113,9 +110,9 @@ exports.handler = async (event) => {
     };
 };
 
-function sendError(code, message, event){
+function sendError(code, message, error){
     console.log('APPLICATION ERROR', message);
-    console.log(JSON.stringify(event));
+    console.log(error);
     return {
         statusCode: code,
         body: message,
