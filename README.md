@@ -143,15 +143,15 @@ Navigate to the deployed web page (`/index.html`) in a Chrome browser using the 
 
 The cost of this solution, excluding the Image delivery and the storage of original images, is based on multiple components, which depends on your image library size, traffic patterns, and your configuration. To illustrate the cost calculation, consider 100 thousands original images with a 500Kb average size; 24 variants requested for each original image, with an average size of 30Kb; 20% of the image library is renewed on a monthly basis; 1 million image requests per month from US/EU region , with an average of 95% Cache Hit Ratio. 
 
-* The cost of storing images on S3 in us-east-1 with Standard Tier equals to (100000*500 +100000*24*40)/1024/1024*0.023 = 3.2 $/month. 
-* The cost of transforming images using a Lambda function with 1500MB memory and an average execution duration of 150 ms, equals 100000*0.2*24*150/1000*1500/1024*0.0000166667  = 1.75 $/month. In addition, we need to account for the cost of downloading then uploading transformed images to S3 (GET & PUT requests), which is equal to 100000*0.2*24*(0.005 + 0.0004)/1000 = 2.6 $/month.
+* The cost of storing images on S3 in us-east-1 with Standard Tier equals to (100000*500 +100000*24*40)/1024/1024*0.023 = $3.2 /month. 
+* The cost of transforming images using a Lambda function with 1500MB memory and an average execution duration of 150 ms, equals 100000*0.2*24*150/1000*1500/1024*0.0000166667  = $1.75 /month. In addition, we need to account for the cost of downloading then uploading transformed images to S3 (GET & PUT requests), which is equal to 100000*0.2*24*(0.005 + 0.0004)/1000 = $2.6 /month.
 * The cost of delivery using CloudFront equals the sum of different components:
-    * CloudFront Data transfer to internet equals 1000000*30/1024/1024*0.085=2.4 $/month. 
-    * CloudFront Request fees equals 1000000*0.0075/10000=0.75 $/month. 
-    * CloudFront Functions equals 0.1 $/month. 
+    * CloudFront Data transfer to internet equals 1000000*30/1024/1024*0.085=$2.4 /month. 
+    * CloudFront Request fees equals 1000000*0.0075/10000=$0.75 /month. 
+    * CloudFront Functions equals $0.1 /month. 
     * The cost of S3 GET requests and Origin Shield requests on cache misses is marginal.
 
-In total, the cost would be around 10 \$/month. In reality, it will be closer to \6$ /month thanks to the (Always) Free tiers of CloudFront and Lambda. You can optimize the cost of this solution according to your business needs by dialling up or down parameters like S3 object retention period or [Lambda memory configuration](https://docs.aws.amazon.com/lambda/latest/operatorguide/profile-functions.html), by changing S3 storage tier, by reconsidering the need for storing transformed images in S3 or by using [ARM based Lambda](https://aws.amazon.com/blogs/aws/aws-lambda-functions-powered-by-aws-graviton2-processor-run-your-functions-on-arm-and-get-up-to-34-better-price-performance/). 
+In total, the cost would be around $10 /month. In reality, it will be closer to $6 /month thanks to the (Always) Free tiers of CloudFront and Lambda. You can optimize the cost of this solution according to your business needs by dialling up or down parameters like S3 object retention period or [Lambda memory configuration](https://docs.aws.amazon.com/lambda/latest/operatorguide/profile-functions.html), by changing S3 storage tier, by reconsidering the need for storing transformed images in S3 or by using [ARM based Lambda](https://aws.amazon.com/blogs/aws/aws-lambda-functions-powered-by-aws-graviton2-processor-run-your-functions-on-arm-and-get-up-to-34-better-price-performance/). 
 
 
 ## Clean up resources
