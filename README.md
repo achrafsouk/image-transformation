@@ -151,7 +151,7 @@ The cost of this solution, excluding the Image delivery and the storage of origi
     * CloudFront Functions equals 0.1 $/month. 
     * The cost of S3 GET requests and Origin Shield requests on cache misses is marginal.
 
-In total, the cost would be around 10 $/month. In reality, it will be closer to 6$ /month thanks to the (Always) Free tiers of CloudFront and Lambda. You can optimize the cost of this solution according to your business needs by dialling up or down parameters like S3 object retention period or [Lambda memory configuration](https://docs.aws.amazon.com/lambda/latest/operatorguide/profile-functions.html), by changing S3 storage tier, by reconsidering the need for storing transformed images in S3 or by using [ARM based Lambda](https://aws.amazon.com/blogs/aws/aws-lambda-functions-powered-by-aws-graviton2-processor-run-your-functions-on-arm-and-get-up-to-34-better-price-performance/). 
+In total, the cost would be around 10 \$/month. In reality, it will be closer to \6$ /month thanks to the (Always) Free tiers of CloudFront and Lambda. You can optimize the cost of this solution according to your business needs by dialling up or down parameters like S3 object retention period or [Lambda memory configuration](https://docs.aws.amazon.com/lambda/latest/operatorguide/profile-functions.html), by changing S3 storage tier, by reconsidering the need for storing transformed images in S3 or by using [ARM based Lambda](https://aws.amazon.com/blogs/aws/aws-lambda-functions-powered-by-aws-graviton2-processor-run-your-functions-on-arm-and-get-up-to-34-better-price-performance/). 
 
 
 ## Clean up resources
